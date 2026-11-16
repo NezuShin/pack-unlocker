@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pack Unlocker</title>
+<meta name="description" content="Removes ZIP and PNG &quot;protection&quot; from Minecraft resource packs, right in your browser.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Cg fill='%2357a83a'%3E%3Crect x='5' y='1' width='6' height='2'/%3E%3Crect x='3' y='2' width='2' height='6'/%3E%3Crect x='11' y='2' width='2' height='3'/%3E%3Crect x='2' y='8' width='12' height='7'/%3E%3C/g%3E%3Crect x='7' y='10' width='2' height='3' fill='%23fff'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #f5f6f3;
+    --surface: #ffffff;
+    --surface-2: #eef0eb;
+    --border: #dde1d8;
+    --text: #1b2019;
+    --muted: #5b6456;
+    --accent: #3d8a28;
+    --accent-hover: #347a22;
+    --accent-ink: #ffffff;
+    --accent-soft: #e4f1dc;
+    --ok: #2e7d32;
+    --ok-soft: #e2f1e3;
+    --bad: #b93a26;
+    --bad-soft: #f9e5e0;
+    --meh: #6f7669;
+    --meh-soft: #e9ebe6;
+    --code-bg: #eff1ec;
+    --shadow: 0 1px 2px rgba(20, 30, 15, .06), 0 8px 24px rgba(20, 30, 15, .06);
+    --radius: 14px;
+    --mono: ui-monospace, "Cascadia Mono", "Cascadia Code", "JetBrains Mono", Consolas, "Liberation Mono", monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111310;
+      --surface: #191c18;
+      --surface-2: #20241e;
+      --border: #2d322a;
+      --text: #e4e8e0;
+      --muted: #9ba494;
+      --accent: #6cbf4b;
+      --accent-hover: #7dcc5d;
+      --accent-ink: #0d130b;
+      --accent-soft: #1e2d18;
+      --ok: #7ccc86;
+      --ok-soft: #1a2c1d;
+      --bad: #ff8e78;
+      --bad-soft: #36201b;
+      --meh: #9aa093;
+      --meh-soft: #252923;
+      --code-bg: #151814;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+      color-scheme: dark;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 var(--sans);
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 16px; }
+  a { color: var(--accent); }
+  code, pre, kbd { font-family: var(--mono); }
+  code { font-size: .88em; background: var(--code-bg); border: 1px solid var(--border); border-radius: 5px; padding: .05em .35em; overflow-wrap: anywhere; }
+
+  /* ---------- header ---------- */
+  header.top { padding: 48px 0 24px; }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand svg { width: 44px; height: 44px; flex: none; }
+  h1 { font-size: 34px; line-height: 1.15; margin: 0; letter-spacing: -.02em; }
+  .lede { color: var(--muted); font-size: 18px; margin: 14px 0 0; max-width: 680px; }
+
+  /* ---------- tool ---------- */
+  .tool {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px;
+  }
+  .drop {
+    display: block;
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 28px 20px;
+    text-align: center;
+    background: var(--surface-2);
+    transition: border-color .15s, background .15s;
+  }
+  .drop.over { border-color: var(--accent); background: var(--accent-soft); }
+  .drop-title { display: block; font-weight: 600; font-size: 17px; margin-bottom: 4px; }
+  .drop-sub { display: block; color: var(--muted); font-size: 14px; margin-bottom: 16px; }
+  input[type=file] { font: inherit; font-size: 14px; color: var(--muted); max-width: 100%; }
+  input[type=file]::file-selector-button {
+    font: inherit; font-weight: 600; font-size: 14px;
+    margin-right: 12px; padding: 8px 14px;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: var(--surface); color: var(--text); cursor: pointer;
+  }
+  input[type=file]::file-selector-button:hover { border-color: var(--accent); }
+  .actions { display: flex; align-items: center; gap: 16px; margin-top: 18px; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    font: inherit; font-weight: 650; font-size: 16px;
+    padding: 12px 22px; min-height: 48px;
+    border: 0; border-radius: 10px;
+    background: var(--accent); color: var(--accent-ink);
+    cursor: pointer; text-decoration: none;
+    transition: background .15s, opacity .15s;
+  }
+  .btn:hover { background: var(--accent-hover); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn:focus-visible, input[type=file]:focus-visible::file-selector-button { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .btn.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  .privacy { color: var(--muted); font-size: 14px; }
+
+  .progress { margin-top: 18px; }
+  .progress-track { height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; border: 1px solid var(--border); }
+  .progress-bar { height: 100%; width: 0; background: var(--accent); transition: width .1s linear; }
+  .progress-text { font-size: 14px; color: var(--muted); margin-top: 6px; font-variant-numeric: tabular-nums; }
+
+  .result { margin-top: 22px; border-top: 1px solid var(--border); padding-top: 20px; }
+  .result-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .result-head h2 { font-size: 20px; margin: 0; }
+  .result-meta { color: var(--muted); font-size: 14px; margin: 6px 0 16px; font-variant-numeric: tabular-nums; }
+  .error { color: var(--bad); background: var(--bad-soft); border-radius: 10px; padding: 12px 14px; margin: 0; }
+  .find-group { margin-top: 18px; }
+  .find-group h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 6px; }
+  .finds { list-style: none; margin: 0; padding: 0; }
+  .finds li { display: grid; grid-template-columns: 22px 1fr auto; column-gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+  .finds li:last-child { border-bottom: 0; }
+  .finds .check { color: var(--ok); font-weight: 700; }
+  .finds a { color: var(--text); text-decoration: none; font-weight: 600; }
+  .finds a:hover { color: var(--accent); text-decoration: underline; }
+  .finds .count { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 14px; white-space: nowrap; }
+  .finds .detail { grid-column: 2 / 4; color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
+  .warns { margin-top: 18px; font-size: 14px; color: var(--muted); }
+  .warns summary { cursor: pointer; color: var(--bad); font-weight: 600; }
+  .warns ul { margin: 8px 0 0; padding-left: 20px; overflow-wrap: anywhere; }
+
+  /* ---------- article ---------- */
+  article.doc { padding: 56px 0 24px; }
+  article.doc > h2 { font-size: 27px; line-height: 1.25; letter-spacing: -.01em; margin: 48px 0 12px; }
+  article.doc > h2:first-child { margin-top: 0; }
+  article.doc h3 { font-size: 19px; margin: 32px 0 8px; }
+  article.doc p, article.doc li { max-width: 72ch; }
+  .kicker { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); font-weight: 700; margin: 0 0 6px; }
+
+  figure { margin: 24px 0; }
+  figcaption { color: var(--muted); font-size: 14px; margin-top: 10px; }
+  .map {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 18px; overflow: hidden;
+  }
+  .map-row { display: flex; gap: 10px; align-items: stretch; flex-wrap: wrap; }
+  .map-group { display: flex; flex-direction: column; gap: 6px; flex: 1 1 300px; min-width: 0; }
+  .map-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .blocks { display: flex; gap: 6px; flex: 1; flex-wrap: wrap; }
+  .blk {
+    position: relative; flex: 1 1 90px; min-width: 0;
+    border-radius: 9px; padding: 10px 10px 10px; border: 1px solid transparent;
+    font-size: 13px; line-height: 1.4;
+  }
+  .blk b { display: block; font-size: 13px; margin-bottom: 4px; }
+  .blk span { display: block; font-family: var(--mono); font-size: 12px; overflow-wrap: anywhere; }
+  .blk.ok { background: var(--ok-soft); border-color: color-mix(in srgb, var(--ok) 35%, transparent); }
+  .blk.bad { background: var(--bad-soft); border-color: color-mix(in srgb, var(--bad) 35%, transparent); }
+  .blk.meh { background: var(--meh-soft); border-color: var(--border); }
+  .blk .t-ok { color: var(--ok); }
+  .blk .t-bad { color: var(--bad); }
+  .blk .t-meh { color: var(--meh); }
+  .step {
+    position: absolute; top: -9px; right: -6px;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--accent); color: var(--accent-ink);
+    font: 700 12px/22px var(--sans); text-align: center;
+  }
+  .map-times { align-self: center; color: var(--muted); font-family: var(--mono); font-size: 13px; padding: 0 4px; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 14px; font-size: 13px; color: var(--muted); }
+  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; border: 1px solid var(--border); }
+
+  ol.steps { padding-left: 22px; }
+  ol.steps li { margin: 6px 0; }
+
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 560px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); background: var(--surface-2); }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { font-weight: 600; }
+  .mc { color: var(--ok); }
+  .ar { color: var(--bad); }
+
+  .layer {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 22px 22px 18px; margin: 18px 0; scroll-margin-top: 16px;
+  }
+  .layer-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .layer .layer-head h3 { margin: 0; font-size: 19px; }
+  .num { font: 700 13px/1 var(--mono); color: var(--accent); background: var(--accent-soft); padding: 5px 8px; border-radius: 6px; }
+  .where { font-size: 12px; font-weight: 650; color: var(--muted); border: 1px solid var(--border); padding: 2px 8px; border-radius: 99px; }
+  .layer p { margin: 10px 0; }
+  pre.hex {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; margin: 12px 0; overflow-x: auto;
+    font-size: 13px; line-height: 1.55;
+  }
+  pre.hex .hl { color: var(--bad); font-weight: 700; }
+  pre.hex .gd { color: var(--ok); font-weight: 700; }
+  pre.hex .cm { color: var(--muted); }
+  dl.effects { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 14px 0 4px; font-size: 15px; }
+  dl.effects dt { font-weight: 650; }
+  dl.effects dt.mc { color: var(--ok); }
+  dl.effects dt.ar { color: var(--bad); }
+  dl.effects dt.fx { color: var(--accent); }
+  dl.effects dd { margin: 0; }
+  @media (max-width: 560px) {
+    dl.effects { grid-template-columns: 1fr; gap: 2px; }
+    dl.effects dd { margin-bottom: 8px; }
+    .tool { padding: 16px; }
+    .layer { padding: 18px 16px 14px; }
+    h1 { font-size: 28px; }
+    .lede { font-size: 16px; }
+    .map { padding: 14px; }
+  }
+
+  ul.tricks li { margin: 6px 0; }
+  footer { color: var(--muted); font-size: 14px; padding: 24px 0 48px; border-top: 1px solid var(--border); margin-top: 40px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="brand">
+    <svg viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true">
+      <g fill="var(--accent)">
+        <rect x="5" y="1" width="6" height="2"/><rect x="3" y="2" width="2" height="6"/><rect x="11" y="2" width="2" height="3"/>
+        <rect x="2" y="8" width="12" height="7"/>
+      </g>
+      <rect x="7" y="10" width="2" height="3" fill="var(--surface)"/>
+    </svg>
+    <h1>Pack Unlocker</h1>
+  </div>
+  <p class="lede">Removes the ZIP and PNG "protection" from Minecraft resource packs, so you can open them in WinRAR, 7-Zip, Explorer and image editors again. The pack keeps working in the game.</p>
+</header>
+
+<main>
+<section class="tool" aria-label="Unlock a pack">
+  <label class="drop" id="drop">
+    <span class="drop-title">Choose a resource pack</span>
+    <span class="drop-sub">or drop a .zip anywhere in this box</span>
+    <input type="file" id="file" accept=".zip,application/zip,application/x-zip-compressed">
+  </label>
+  <div class="actions">
+    <button class="btn" id="run" type="button" disabled>Remove protection</button>
+    <span class="privacy">Runs in your browser. The pack is never uploaded.</span>
+  </div>
+  <div class="progress" id="progress" hidden>
+    <div class="progress-track"><div class="progress-bar" id="bar"></div></div>
+    <div class="progress-text" id="progress-text">Working…</div>
+  </div>
+  <div class="result" id="result" hidden aria-live="polite"></div>
+</section>
+
+<article class="doc" id="article">
+
+<h2>How the "protection" works</h2>
+<p>A resource pack is a plain ZIP file. Protection tools can't encrypt it, because the game has to read it. Instead they exploit a gap. <strong>Minecraft reads only a small part of the ZIP and PNG structures and checks almost none of it</strong>, while archivers and image editors read and verify everything. The protector overwrites every field the game ignores with garbage. The game still loads the pack. Everything else sees a corrupted file.</p>
+<p>No real data is lost or scrambled, so the damage can be repaired automatically. Each layer below shows the bytes it changes, why the game doesn't care, and how it's undone.</p>
+
+<h3>A ZIP stores everything twice</h3>
+<p>Each file inside a ZIP starts with a <em>local file header</em> (signature, name, sizes, CRC), followed by its compressed bytes and sometimes a small <em>data descriptor</em>. At the end of the archive, the <em>central directory</em> repeats the metadata of every file and points to its local header. The last record, <em>end of central directory</em> (EOCD), tells readers where the central directory is.</p>
+
+<figure>
+  <div class="map">
+    <div class="map-row">
+      <div class="map-group">
+        <div class="map-label">Repeated for every file</div>
+        <div class="blocks">
+          <div class="blk bad"><span class="step" title="Minecraft reads this third">3</span><b>Local header</b><span class="t-bad">name ../\\\\\\…</span><span class="t-bad">CRC 0 · sizes 0</span></div>
+          <div class="blk ok"><span class="step" title="Minecraft reads this fourth">4</span><b>Deflate data</b><span class="t-ok">intact</span></div>
+          <div class="blk meh"><b>Data descriptor</b><span class="t-meh">real CRC &amp; sizes</span></div>
+        </div>
+      </div>
+      <div class="map-group">
+        <div class="map-label">End of the file</div>
+        <div class="blocks">
+          <div class="blk bad" style="flex-grow:2"><span class="step" title="Minecraft reads this second">2</span><b>Central directory</b><span class="t-ok">real names · offsets</span><span class="t-bad">CRC 0 · size 1337 · disk 14597</span></div>
+          <div class="blk ok"><span class="step" title="Minecraft reads this first">1</span><b>EOCD</b><span class="t-ok">intact</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--ok-soft)"></i>used by Minecraft, intact</span>
+      <span><i style="background:var(--bad-soft)"></i>contains poisoned fields</span>
+      <span><i style="background:var(--meh-soft)"></i>ignored by Minecraft</span>
+      <span><i style="background:var(--accent)"></i>order in which the game reads</span>
+    </div>
+  </div>
+  <figcaption>Layout of a protected pack. The game reads only the green values and skips everything in red.</figcaption>
+</figure>
+
+<h3>What Minecraft actually reads</h3>
+<p>Java Edition opens packs with Java's built-in <code>java.util.zip.ZipFile</code>, which:</p>
+<ol class="steps">
+  <li>Finds the EOCD record at the end of the file.</li>
+  <li>Reads each file's <strong>name, compression method, compressed size and offset</strong> from the central directory.</li>
+  <li>Jumps to the local header, checks its 4-byte signature and uses its name and extra-field <em>lengths</em> to skip ahead. The name itself is never read.</li>
+  <li>Inflates the data until the deflate stream ends. <strong>The CRC-32 is never verified</strong>, and the uncompressed size only sets the buffer size.</li>
+</ol>
+<p>Textures are then decoded by <strong>stb_image</strong> (through LWJGL). stb_image reads each PNG chunk's CRC field and discards it, never checks the zlib Adler-32 checksum of the pixel data, and skips chunks it doesn't know. That's why a protected pack loads in the game without a single error, while every other tool mentioned below fails on it.</p>
+
+<h3>Who checks what</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Field</th><th>Minecraft</th><th>Archivers &amp; image tools</th></tr></thead>
+  <tbody>
+    <tr><td>File name in local header</td><td class="mc">only its length is used</td><td class="ar">compared with the central directory, or used as the name</td></tr>
+    <tr><td>CRC-32</td><td class="mc">never checked</td><td class="ar">verified for every file</td></tr>
+    <tr><td>Uncompressed size</td><td class="mc">buffer-size hint</td><td class="ar">used to allocate and validate output</td></tr>
+    <tr><td>Disk number</td><td class="mc">ignored</td><td class="ar">used to locate parts of split archives</td></tr>
+    <tr><td>Timestamps</td><td class="mc">ignored</td><td class="ar">shown and applied on extraction</td></tr>
+    <tr><td>PNG chunk CRC</td><td class="mc">skipped by stb_image</td><td class="ar">verified by libpng and most editors</td></tr>
+    <tr><td>Adler-32 of PNG pixels</td><td class="mc">skipped by stb_image</td><td class="ar">verified by zlib / libpng</td></tr>
+    <tr><td>Unknown private PNG chunk</td><td class="mc">skipped</td><td>skipped (a harmless marker)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>The layers, one by one</h2>
+
+<section class="layer" id="layer-names">
+  <div class="layer-head"><span class="num">01</span><h3>Fake file names in local headers</h3><span class="where">ZIP</span></div>
+  <p>The name in almost every local header is replaced with <code>../</code> followed by backslashes, padded to exactly the length of the real name. Because the length is unchanged, every offset in the archive stays valid.</p>
+<pre class="hex"><span class="cm">central directory</span>  <span class="gd">assets/myshader/shaders/include/vertex_body.glsl</span>  <span class="cm">48 bytes</span>
+<span class="cm">local header     </span>  <span class="hl">../\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\</span>  <span class="cm">48 bytes</span></pre>
+  <dl class="effects">
+    <dt class="mc">Minecraft</dt><dd>Uses only the length (48) to skip to the data.</dd>
+    <dt class="ar">Everything else</dt><dd>Readers that walk the local headers see a pack full of files called <code>../\\\\…</code>, which also looks like a path-traversal attack. Windows' built-in <code>tar</code> lists nothing but these names. Python's <code>zipfile</code> stops with <code>File name in directory … and header … differ</code>. Info-ZIP <code>unzip</code> prints <code>mismatching "local" filename</code> for every file.</dd>
+    <dt class="fx">Fix</dt><dd>Local headers are rewritten from the central directory, which holds the names the game uses.</dd>
+  </dl>
+</section>
+
+<section class="layer" id="layer-crc">
+  <div class="layer-head"><span class="num">02</span><h3>Zeroed CRC-32 checksums</h3><span class="where">ZIP</span></div>
+  <p>Every file has CRC-32 <code>00000000</code> in both headers. Flag bit 3 ("data descriptor") is set, so the local header is allowed to leave CRC and sizes empty. The real values sit in a 16-byte data descriptor after the compressed data, where the central directory never points.</p>
+<pre class="hex"><span class="cm">local header     </span> 50 4B 03 04 14 00 08 08 08 00 F6 05 5A 5D <span class="hl">00 00 00 00</span> <span class="hl">00 00 00 00</span> <span class="hl">00 00 00 00</span> 30 00 00 00
+<span class="cm">                                    flags                   CRC-32      packed size uncomp. size</span>
+<span class="cm">data descriptor  </span> 50 4B 07 08 <span class="gd">2E 13 E1 5F</span> <span class="gd">7D 07 00 00</span> <span class="gd">AF 1E 00 00</span>
+<span class="cm">                              5FE1132E    1917 bytes  7855 bytes</span>
+<span class="cm">central directory</span> … CRC-32 <span class="hl">00 00 00 00</span> …</pre>
+  <dl class="effects">
+    <dt class="mc">Minecraft</dt><dd><code>ZipFile</code> never verifies the CRC.</dd>
+    <dt class="ar">Everything else</dt><dd>Every file fails its integrity check: <code>unzip</code> reports <code>bad CRC 5fe1132e (should be 00000000)</code> for every file, and archivers mark the whole archive as damaged.</dd>
+    <dt class="fx">Fix</dt><dd>Each file is decompressed and its CRC computed. It always matches the hidden descriptor.</dd>
+  </dl>
+</section>
+
+<section class="layer" id="layer-size">
+  <div class="layer-head"><span class="num">03</span><h3>Fake uncompressed size: 1337</h3><span class="where">ZIP</span></div>
+  <p>Every central directory entry claims the file is exactly <strong>1337 bytes</strong> once unpacked. The compressed size is left correct, because the game needs it.</p>
+<pre class="hex"><span class="cm">central directory</span> … packed <span class="gd">7D 07 00 00</span> (1917)   unpacked <span class="hl">39 05 00 00</span> (1337)   <span class="cm">real: 7855</span></pre>
+  <dl class="effects">
+    <dt class="mc">Minecraft</dt><dd>Uses it only as the initial buffer size, then reads until the deflate stream ends.</dd>
+    <dt class="ar">Everything else</dt><dd>Readers that trust the size stop after 1337 bytes. Python's <code>zipfile</code>, for example, cuts every file off there and then fails with <code>Bad CRC-32</code>. More forgiving tools such as Info-ZIP <code>unzip</code> ignore it, which is why it's only one layer of several.</dd>
+    <dt class="fx">Fix</dt><dd>The real size is measured while decompressing.</dd>
+  </dl>
+</section>
+
+<section class="layer" id="layer-disk">
+  <div class="layer-head"><span class="num">04</span><h3>Bogus disk number: a fake split archive</h3><span class="where">ZIP</span></div>
+  <p>ZIP archives can be split into volumes (<code>.z01</code>, <code>.z02</code>, …). Each central directory entry records which volume its file starts on. In a protected pack, almost every entry says <strong>volume 14,597</strong>. That is 1337 (<code>0x0539</code>) written with its bytes swapped.</p>
+<pre class="hex"><span class="cm">central directory</span> … disk number start <span class="hl">05 39</span> <span class="cm">= 0x3905 = 14597 (should be 00 00)</span></pre>
+  <dl class="effects">
+    <dt class="mc">Minecraft</dt><dd>Ignores every multi-volume field.</dd>
+    <dt class="ar">Everything else</dt><dd>Archivers that support split archives think the file data lives on volume 14,598 of a set they don't have. They ask for the missing parts or refuse to extract.</dd>
+    <dt class="fx">Fix</dt><dd>Set to 0. The new archive is a single volume.</dd>
+  </dl>
+</section>
+
+<section class="layer" id="layer-time">
+  <div class="layer-head"><span class="num">05</span><h3>Zeroed timestamps</h3><span class="where">ZIP</span></div>
+  <p>The central directory dates are set to the DOS epoch (1980-01-01 00:00). An extra "UT" field adds a Unix timestamp of 0 (1970-01-01). This doesn't break anything. It mostly makes extracted files look odd and hides when the pack was built. The local headers still contain the real build time.</p>
+<pre class="hex"><span class="cm">central directory</span> … time <span class="hl">00 00</span> date <span class="hl">21 00</span> … extra <span class="cm">55 54 05 00 07</span> <span class="hl">00 00 00 00</span>
+<span class="cm">local header     </span> … time <span class="gd">F6 05</span> date <span class="gd">5A 5D</span></pre>
+  <dl class="effects">
+    <dt class="mc">Minecraft</dt><dd>Doesn't read timestamps.</dd>
+    <dt class="fx">Fix</dt><dd>The date and time from the local header are copied back.</dd>
+  </dl>
+</section>
+
+<p>The next three layers are inside the textures. A PNG file is a signature followed by <em>chunks</em>. Each chunk is <code>length · type · data · CRC-32</code>. The pixels live in <code>IDAT</code> chunks as a zlib stream: a 2-byte header, deflate data, and an Adler-32 checksum of the unpacked pixels.</p>
+
+<figure>
+  <div class="map">
+    <div class="blocks">
+      <div class="blk ok"><b>Signature</b><span class="t-ok">89 50 4E 47…</span></div>
+      <div class="blk bad"><b>IHDR</b><span class="t-ok">size, format</span><span class="t-bad">CRC ✗</span></div>
+      <div class="blk bad" style="flex-grow:3"><b>IDAT</b><span class="t-ok">zlib header · deflate data</span><span class="t-bad">Adler-32 ✗ · CRC ✗</span></div>
+      <div class="blk meh"><b>Private chunk</b><span class="t-meh">marker</span></div>
+      <div class="blk bad"><b>IEND</b><span class="t-bad">CRC ✗</span></div>
+    </div>
+  </div>
+  <figcaption>A protected texture. The pixel data is untouched. Only the checksums around it are broken.</figcaption>
+</figure>
+
+<section class="layer" id="layer-png-crc">
+  <div class="layer-head"><span class="num">06</span><h3>PNG chunk CRCs XOR-ed with a key</h3><span class="where">PNG</span></div>
+  <p>Every chunk CRC in every texture is XOR-ed with the same constant, <strong><code>0xA5C3F17B</code></strong>. It's easiest to see on <code>IEND</code>, which is identical in every PNG in the world:</p>
+<pre class="hex"><span class="cm">normal IEND   </span> 00 00 00 00 49 45 4E 44 <span class="gd">AE 42 60 82</span>
+<span class="cm">protected IEND</span> 00 00 00 00 49 45 4E 44 <span class="hl">0B 81 91 F9</span>   <span class="cm">AE426082 xor A5C3F17B = 0B8191F9</span></pre>
+  <dl class="effects">
+    <dt class="mc">Minecraft</dt><dd>stb_image reads the CRC field and throws it away.</dd>
+    <dt class="ar">Everything else</dt><dd>libpng, which most image editors and viewers use, rejects a bad CRC in a critical chunk. ImageMagick stops at the first chunk with <code>IHDR: CRC error</code>.</dd>
+    <dt class="fx">Fix</dt><dd>Every chunk CRC is recalculated.</dd>
+  </dl>
+</section>
+
+<section class="layer" id="layer-adler">
+  <div class="layer-head"><span class="num">07</span><h3>Broken Adler-32 inside the pixel data</h3><span class="where">PNG</span></div>
+  <p>Fixing the CRCs alone isn't enough. The Adler-32 checksum at the end of each image's zlib stream is XOR-ed with a second key, <strong><code>0x5A6B7C8D</code></strong>. The compressed pixels are left alone.</p>
+<pre class="hex"><span class="cm">Adler-32 stored</span> <span class="hl">FB BC BE 4C</span>   <span class="cm">real</span> <span class="gd">A1 D7 C2 C1</span>   <span class="cm">FBBCBE4C xor A1D7C2C1 = 5A6B7C8D</span></pre>
+  <dl class="effects">
+    <dt class="mc">Minecraft</dt><dd>stb_image's built-in inflater never checks Adler-32.</dd>
+    <dt class="ar">Everything else</dt><dd>zlib, used by libpng, decodes every pixel and then fails with <code>incorrect data check</code>. The image stays unreadable even in tools that tolerate CRC errors.</dd>
+    <dt class="fx">Fix</dt><dd>The pixel data is decompressed and the real Adler-32 written back. The compressed bytes stay identical.</dd>
+  </dl>
+</section>
+
+<section class="layer" id="layer-marker">
+  <div class="layer-head"><span class="num">08</span><h3>A private marker chunk</h3><span class="where">PNG</span></div>
+  <p>Each texture gets an extra 4-byte chunk named <code>iaPR</code>, holding <code>IAP</code> + version byte <code>01</code>, just before <code>IEND</code>. Its own CRC is valid. The protector probably uses it to recognize images it has already processed. Case matters in chunk names: a lowercase first letter means <em>ancillary</em> (safe to skip), and a lowercase second letter means <em>private</em>. Every decoder is allowed to ignore it.</p>
+<pre class="hex"><span class="cm">length</span> 00 00 00 04  <span class="cm">type</span> 69 61 50 52 <span class="cm">"iaPR"</span>  <span class="cm">data</span> 49 41 50 01 <span class="cm">"IAP" v1</span>  <span class="cm">crc</span> 93 E2 2A 76</pre>
+  <dl class="effects">
+    <dt class="mc">Minecraft</dt><dd>Skipped.</dd>
+    <dt class="ar">Everything else</dt><dd>Also skipped. It's harmless, but it marks the file as processed by the protector.</dd>
+    <dt class="fx">Fix</dt><dd>Removed, together with any other private ancillary chunk.</dd>
+  </dl>
+</section>
+
+<h2>What the unlocker does</h2>
+<ol class="steps">
+  <li>Finds the central directory the same way Java does, including the offset math Java uses when junk is added in front of the archive.</li>
+  <li>For every file, follows the local header's length fields to the data, decompresses it and computes the real CRC-32 and size. Streams are inflated to their real end, so wrong sizes don't matter.</li>
+  <li>For every PNG, recalculates all chunk CRCs and the Adler-32, and drops private chunks and junk after <code>IEND</code>. The pixel data is not re-encoded.</li>
+  <li>Writes a brand-new ZIP with consistent local headers, the real names, CRCs, sizes and timestamps, and no data descriptors, extra fields or volume numbers.</li>
+</ol>
+<p>Files that needed no repair keep their original compressed bytes, so JSON, shaders and models come out byte-for-byte identical. Repaired PNGs are <em>stored</em> (PNG data is already compressed), which is why the output can be slightly smaller or larger than the input.</p>
+
+<h3 id="other-tricks">Other tricks it also handles</h3>
+<p>Some protectors use other tricks as well. Rebuilding the archive from the central directory fixes these too:</p>
+<ul class="tricks">
+  <li><strong>Fake encryption flag or compression method</strong> in local headers (makes WinRAR ask for a password). Java only reads these from the central directory.</li>
+  <li><strong>Junk bytes in front of the archive</strong> without adjusted offsets. Java compensates automatically, many tools don't.</li>
+  <li><strong>Duplicate entries.</strong> <code>ZipFile.getEntry</code> returns the <em>last</em> copy, so that's the one that's kept.</li>
+  <li><strong>Names that can't be extracted on Windows:</strong> <code>CON</code>, <code>aux.json</code>, <code>: * ? |</code>, trailing dots, <code>..</code>, absolute paths, and file/folder clashes such as a <em>file</em> called <code>assets</code>. These are renamed (unsafe characters become <code>_</code>, clashes get a <code>~1</code> suffix), never resolved into real paths, so a decoy can't overwrite a real file.</li>
+  <li><strong>Zip bombs and broken decoys.</strong> Entries that unpack to more than 512 MB or don't decompress at all are skipped and listed as warnings.</li>
+  <li><strong>PNG tricks:</strong> junk after <code>IEND</code>, a zlib header claiming a too-small window, <code>IDAT</code> chunks interleaved with other chunks, and deflate streams only stb_image can read (recompressed).</li>
+</ul>
+
+<h3>What it doesn't touch</h3>
+<p>The unlocker repairs <em>packaging</em>, not content. Hashed or random file names (like <code>textures/7f3a9c2e….png</code>), minified JSON and stripped shaders aren't corruption. Those files are valid, just hard to read, so they're left exactly as they are.</p>
+
+</article>
+</main>
+
+<footer>
+  Pack Unlocker works offline. Everything happens in this page; open it straight from disk or host it anywhere as static files.
+</footer>
+
+</div>
+
+<script src="unlocker.js"></script>
+<script>
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const fileInput = $('file'), runBtn = $('run'), drop = $('drop');
+  const progress = $('progress'), bar = $('bar'), progressText = $('progress-text'), result = $('result');
+  let file = null, lastUrl = null;
+
+  const LAYER_LINKS = {
+    'local-names': 'layer-names', crc: 'layer-crc', usize: 'layer-size', disk: 'layer-disk', timestamps: 'layer-time',
+    'png-crc': 'layer-png-crc', 'png-adler': 'layer-adler', 'png-chunks': 'layer-marker',
+  };
+
+  const UNITS = { files: ['file', 'files'], pngs: ['PNG', 'PNGs'], chunks: ['chunk', 'chunks'] };
+  const fmtSize = (n) => (n < 1024 ? n + ' B' : n < 1048576 ? (n / 1024).toFixed(1) + ' KB' : (n / 1048576).toFixed(2) + ' MB');
+  const fmtNum = (n) => n.toLocaleString('en-US');
+
+  function el(tag, props, children) {
+    const e = document.createElement(tag);
+    if (props) for (const k in props) {
+      if (k === 'text') e.textContent = props[k];
+      else if (k === 'class') e.className = props[k];
+      else e.setAttribute(k, props[k]);
+    }
+    (children || []).forEach((c) => c && e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c));
+    return e;
+  }
+
+  function setFile(f) {
+    file = f || null;
+    runBtn.disabled = !file;
+    result.hidden = true;
+  }
+
+  function setProgress(fraction, text) {
+    bar.style.width = Math.round(fraction * 100) + '%';
+    if (text) progressText.textContent = text;
+  }
+
+  fileInput.addEventListener('change', () => setFile(fileInput.files[0]));
+  ['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', (e) => {
+    const files = e.dataTransfer && e.dataTransfer.files;
+    if (!files || !files.length) return;
+    try { fileInput.files = files; } catch (err) { /* old browsers: keep our own reference */ }
+    setFile(files[0]);
+  });
+  // A file dropped next to the box shouldn't navigate away from the page.
+  window.addEventListener('dragover', (e) => e.preventDefault());
+  window.addEventListener('drop', (e) => e.preventDefault());
+
+  function download(url, name) {
+    const a = el('a', { href: url, download: name });
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  function renderReport(r, outName, url, ms) {
+    result.textContent = '';
+    const fixedLayers = r.findings.length;
+    const head = el('div', { class: 'result-head' }, [
+      el('h2', { text: fixedLayers ? 'Protection removed' : 'No protection found' }),
+    ]);
+    const meta = el('p', {
+      class: 'result-meta',
+      text: fmtNum(r.written) + ' files · ' + fmtSize(r.inputSize) + ' → ' + fmtSize(r.outputSize) + ' · ' + (ms / 1000).toFixed(1) + ' s' +
+        (fixedLayers ? ' · ' + fixedLayers + (fixedLayers === 1 ? ' layer' : ' layers') + ' fixed' : ''),
+    });
+    const dl = el('a', { class: 'btn', href: url, download: outName, text: 'Download ' + outName });
+    result.append(head, meta, dl);
+    if (!fixedLayers) {
+      result.appendChild(el('p', { class: 'result-meta', text: 'The archive was rebuilt anyway, with clean headers and checksums.' }));
+    }
+
+    const groups = [['zip', 'Archive (ZIP)'], ['png', 'Textures (PNG)']];
+    for (const [g, label] of groups) {
+      const items = r.findings.filter((f) => f.group === g);
+      if (!items.length) continue;
+      const ul = el('ul', { class: 'finds' });
+      for (const f of items) {
+        const target = LAYER_LINKS[f.id] || 'other-tricks';
+        ul.appendChild(el('li', null, [
+          el('span', { class: 'check', 'aria-hidden': 'true', text: '✓' }),
+          el('a', { href: '#' + target, text: f.title }),
+          el('span', { class: 'count', text: f.unit ? fmtNum(f.count) + ' ' + UNITS[f.unit][f.count === 1 ? 0 : 1] : '' }),
+          f.detail ? el('span', { class: 'detail', text: f.detail }) : null,
+        ]));
+      }
+      result.appendChild(el('div', { class: 'find-group' }, [el('h3', { text: label }), ul]));
+    }
+
+    if (r.warnings.length) {
+      const list = el('ul');
+      r.warnings.slice(0, 200).forEach((w) => list.appendChild(el('li', { text: w })));
+      if (r.warnings.length > 200) list.appendChild(el('li', { text: '… and ' + (r.warnings.length - 200) + ' more' }));
+      result.appendChild(el('details', { class: 'warns' }, [el('summary', { text: r.warnings.length + (r.warnings.length === 1 ? ' warning' : ' warnings') }), list]));
+    }
+    result.hidden = false;
+  }
+
+  function renderError(err) {
+    result.textContent = '';
+    result.append(
+      el('div', { class: 'result-head' }, [el('h2', { text: 'Could not repair this file' })]),
+      el('p', { class: 'error', text: (err && err.message) || String(err) })
+    );
+    result.hidden = false;
+  }
+
+  runBtn.addEventListener('click', async () => {
+    if (!file) return;
+    runBtn.disabled = true;
+    fileInput.disabled = true;
+    result.hidden = true;
+    progress.hidden = false;
+    setProgress(0, 'Reading ' + file.name + '…');
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const t0 = performance.now();
+      const out = await PackUnlocker.unlock(bytes, { onProgress: setProgress });
+      const blob = new Blob(out.parts, { type: 'application/zip' });
+      if (lastUrl) URL.revokeObjectURL(lastUrl);
+      lastUrl = URL.createObjectURL(blob);
+      const outName = file.name.replace(/\.zip$/i, '') + '-unlocked.zip';
+      renderReport(out.report, outName, lastUrl, performance.now() - t0);
+      download(lastUrl, outName);
+    } catch (err) {
+      console.error(err);
+      renderError(err);
+    } finally {
+      progress.hidden = true;
+      fileInput.disabled = false;
+      runBtn.disabled = !file;
+    }
+  });
+})();
+</script>
+</body>
+</html>
